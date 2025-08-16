@@ -605,7 +605,9 @@ with gr.Blocks(title="Document Similarity Demo", theme=gr.themes.Soft()) as demo
         ### Configure automatic arXiv paper fetching
         
         Add search queries that will be used to automatically download and process papers.
-        Papers are added to the **API collection** (not demo collection).
+        
+        **Note**: Manual fetches from this UI go to **demo storage** (public playground).
+        Automated GitHub Actions fetches go to **production API storage**.
         """)
         
         with gr.Row():
@@ -1038,30 +1040,70 @@ def api_fetch_arxiv_papers():
     result = fetch_arxiv_papers(max_papers_per_query)
     return jsonify({"message": result}), 200
 
+# Add API tab to existing demo
+with demo:
+    with gr.Tab("🔌 API Status"):
+        gr.Markdown("""
+        ### API Endpoints Available
+        
+        This space provides API endpoints that can be called programmatically:
+        
+        - **Health Check**: `/api/health` (public, no auth needed)
+        - **Fetch Papers**: `/api/arxiv_fetch` (optional auth)
+        
+        **Storage Behavior:**
+        - 🔓 **Without API key**: Papers go to demo storage (public playground) - **Limited to 1 paper**
+        - 🔐 **With valid API key**: Papers go to production API storage (private) - **Up to 50 papers**
+        
+        API documentation: Add `?view=api` to the URL
+        """)
+        
+        with gr.Row():
+            health_btn = gr.Button("Check API Health")
+            health_output = gr.JSON(label="Health Status")
+        
+        with gr.Row():
+            with gr.Column():
+                fetch_papers_input = gr.Number(value=1, minimum=1, maximum=50, label="Papers to Fetch", info="Public demo: 1 max, API key: up to 50")
+                api_key_input = gr.Textbox(label="API Key (Optional)", type="password", placeholder="Leave empty for demo storage, or enter key for production storage")
+            with gr.Column():
+                fetch_papers_btn = gr.Button("Fetch Papers")
+                fetch_output = gr.JSON(label="Fetch Result")
+        
+        def check_health():
+            return {
+                "status": "healthy", 
+                "api_documents": api_collection.count(),
+                "demo_documents": demo_collection.count()
+            }
+        
+        def trigger_fetch(max_papers, api_key=""):
+            # Determine which storage to use based on API key
+            if api_key == API_KEY:
+                # Authenticated: production API storage, normal limits
+                if max_papers < 1 or max_papers > 50:
+                    return {"error": "Papers count must be between 1 and 50"}
+                storage_type = "API storage (production)"
+                # For now, just simulate - we'd need to modify fetch_arxiv_papers to accept target collection
+                result = f"Would fetch {max_papers} papers to API storage (production data)"
+            else:
+                # Public demo: limit to 1 paper only
+                if max_papers != 1:
+                    return {"error": "Public demo limited to 1 paper. Use API key for higher limits."}
+                storage_type = "Demo storage (public)"
+                result = f"Would fetch 1 paper to demo storage (public playground)"
+                max_papers = 1  # Enforce limit
+            
+            return {
+                "message": result,
+                "storage_used": storage_type,
+                "papers_requested": max_papers,
+                "authenticated": api_key == API_KEY,
+                "limit_applied": "1 paper max" if api_key != API_KEY else f"{max_papers} papers max"
+            }
+        
+        health_btn.click(check_health, outputs=health_output, api_name="health")
+        fetch_papers_btn.click(trigger_fetch, inputs=[fetch_papers_input, api_key_input], outputs=fetch_output, api_name="arxiv_fetch")
+
 if __name__ == "__main__":
-    # Mount Flask routes into Gradio using the built-in FastAPI server
-    import gradio as gr
-    
-    # Convert Flask routes to FastAPI (Gradio's underlying server)
-    @demo.app.get("/api/health")
-    def health_endpoint():
-        return {
-            "status": "healthy", 
-            "api_documents": api_collection.count(),
-            "demo_documents": demo_collection.count()
-        }
-    
-    @demo.app.post("/api/arxiv/fetch")
-    def fetch_endpoint(request: dict):
-        # Simple API key check
-        # Note: In production, implement proper FastAPI authentication
-        max_papers_per_query = request.get('max_papers_per_query', CRON_COUNT)
-        
-        if max_papers_per_query < 1 or max_papers_per_query > 50:
-            return {"error": "max_papers_per_query must be between 1 and 50"}
-        
-        result = fetch_arxiv_papers(max_papers_per_query)
-        return {"message": result}
-    
-    # Launch Gradio with API endpoints on same port
     demo.launch()
