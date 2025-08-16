@@ -32,7 +32,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
-    "hardhat": "^3.0.0",
+    "hardhat": "^2.26.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
