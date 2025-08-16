@@ -748,11 +748,17 @@ with demo:
         This space provides API endpoints that can be called programmatically:
         
         - **Health Check**: `/api/health` (public, no auth needed)
+        - **Add Document**: `/api/add` (requires API key)
+        - **Add PDF**: `/api/add_pdf` (requires API key)  
+        - **Search Documents**: `/api/search` (requires API key)
+        - **Compare Documents**: `/api/compare` (requires API key)
+        - **List Documents**: `/api/documents` (requires API key)
+        - **Delete Document**: `/api/delete` (requires API key)
         - **Fetch Papers**: `/api/arxiv_fetch` (optional auth)
         
         **Storage Behavior:**
         - 🔓 **Without API key**: Papers go to demo storage (public playground) - **Limited to 1 paper**
-        - 🔐 **With valid API key**: Papers go to production API storage (private) - **Up to 50 papers**
+        - 🔐 **With valid API key**: Documents/papers go to production API storage (private)
         
         API documentation: Add `?view=api` to the URL
         """)
@@ -775,6 +781,163 @@ with demo:
                 "api_documents": api_collection.count(),
                 "demo_documents": demo_collection.count()
             }
+        
+        def api_add_document(content: str, metadata: dict = None, api_key: str = ""):
+            if api_key != API_KEY:
+                return {"error": "Invalid or missing API key"}
+            
+            if not content:
+                return {"error": "Content is required"}
+            
+            doc_id = generate_doc_id(content)
+            existing = api_collection.get(ids=[doc_id])
+            if existing['ids']:
+                return {"message": "Document already exists", "id": doc_id}
+            
+            embedding = model.encode(content).tolist()
+            meta_dict = {"source": "api"}
+            if metadata:
+                meta_dict.update(metadata)
+            
+            api_collection.add(
+                embeddings=[embedding],
+                documents=[content],
+                metadatas=[meta_dict],
+                ids=[doc_id]
+            )
+            
+            return {"message": "Document added", "id": doc_id}
+        
+        def api_search_documents(query: str, n_results: int = 5, api_key: str = ""):
+            if api_key != API_KEY:
+                return {"error": "Invalid or missing API key"}
+            
+            if not query:
+                return {"error": "Query is required"}
+            
+            doc_count = api_collection.count()
+            if doc_count == 0:
+                return {"results": [], "message": "No documents in database"}
+            
+            n_results = max(1, min(n_results, doc_count))
+            query_embedding = model.encode(query).tolist()
+            
+            results = api_collection.query(
+                query_embeddings=[query_embedding],
+                n_results=n_results
+            )
+            
+            formatted_results = []
+            for i in range(len(results['ids'][0])):
+                formatted_results.append({
+                    "id": results['ids'][0][i],
+                    "similarity": 1 - results['distances'][0][i],
+                    "content": results['documents'][0][i],
+                    "metadata": results['metadatas'][0][i]
+                })
+            
+            return {"results": formatted_results, "query": query}
+        
+        def api_compare_documents(doc1: str, doc2: str, api_key: str = ""):
+            if api_key != API_KEY:
+                return {"error": "Invalid or missing API key"}
+            
+            if not doc1 or not doc2:
+                return {"error": "Both documents are required"}
+            
+            embedding1 = model.encode(doc1)
+            embedding2 = model.encode(doc2)
+            
+            from numpy import dot
+            from numpy.linalg import norm
+            
+            similarity = float(dot(embedding1, embedding2) / (norm(embedding1) * norm(embedding2)))
+            
+            return {
+                "similarity": similarity,
+                "percentage": similarity * 100,
+                "doc1_preview": doc1[:100],
+                "doc2_preview": doc2[:100]
+            }
+        
+        def api_list_documents(api_key: str = ""):
+            if api_key != API_KEY:
+                return {"error": "Invalid or missing API key"}
+            
+            all_docs = api_collection.get()
+            
+            documents = []
+            for i in range(len(all_docs['ids'])):
+                documents.append({
+                    "id": all_docs['ids'][i],
+                    "content": all_docs['documents'][i],
+                    "metadata": all_docs['metadatas'][i]
+                })
+            
+            return {"documents": documents, "count": len(documents)}
+        
+        def api_delete_document(doc_id: str, api_key: str = ""):
+            if api_key != API_KEY:
+                return {"error": "Invalid or missing API key"}
+            
+            try:
+                existing = api_collection.get(ids=[doc_id])
+                if not existing['ids']:
+                    return {"error": "Document not found"}
+                
+                api_collection.delete(ids=[doc_id])
+                return {"message": "Document deleted", "id": doc_id}
+                
+            except Exception as e:
+                return {"error": f"Failed to delete document: {str(e)}"}
+        
+        def api_add_pdf_document(pdf_file, metadata: dict = None, api_key: str = ""):
+            if api_key != API_KEY:
+                return {"error": "Invalid or missing API key"}
+            
+            if pdf_file is None:
+                return {"error": "No PDF file provided"}
+            
+            try:
+                with open(pdf_file.name, 'rb') as f:
+                    pdf_bytes = f.read()
+                
+                extracted_text = extract_text_from_pdf(pdf_bytes)
+                
+                if not extracted_text.strip():
+                    return {"error": "No text found in PDF"}
+                
+                meta_dict = {"source": "pdf_upload", "filename": pdf_file.name.split('/')[-1]}
+                if metadata:
+                    meta_dict.update(metadata)
+                
+                meta_dict["text_length"] = len(extracted_text)
+                meta_dict["pages"] = len(extracted_text.split('\n\n'))
+                
+                doc_id = generate_doc_id(extracted_text)
+                existing = api_collection.get(ids=[doc_id])
+                if existing['ids']:
+                    return {"message": "Document already exists", "id": doc_id, "filename": pdf_file.name}
+                
+                embedding = model.encode(extracted_text).tolist()
+                
+                api_collection.add(
+                    embeddings=[embedding],
+                    documents=[extracted_text],
+                    metadatas=[meta_dict],
+                    ids=[doc_id]
+                )
+                
+                return {
+                    "message": "PDF processed and document added",
+                    "id": doc_id,
+                    "filename": pdf_file.name.split('/')[-1],
+                    "text_length": len(extracted_text),
+                    "pages": meta_dict["pages"]
+                }
+                
+            except Exception as e:
+                return {"error": f"Failed to process PDF: {str(e)}}"}
         
         def trigger_fetch(max_papers, api_key=""):
             # Determine which storage to use based on API key
@@ -803,6 +966,26 @@ with demo:
         
         health_btn.click(check_health, outputs=health_output, api_name="health")
         fetch_papers_btn.click(trigger_fetch, inputs=[fetch_papers_input, api_key_input], outputs=fetch_output, api_name="arxiv_fetch")
+        
+        # Create hidden buttons to register API endpoints
+        # These buttons are not visible but make the functions available via API
+        hidden_add_btn = gr.Button("Add Document", visible=False)
+        hidden_search_btn = gr.Button("Search", visible=False) 
+        hidden_compare_btn = gr.Button("Compare", visible=False)
+        hidden_list_btn = gr.Button("List Documents", visible=False)
+        hidden_delete_btn = gr.Button("Delete Document", visible=False)
+        hidden_pdf_btn = gr.Button("Add PDF", visible=False)
+        
+        # Hidden outputs for API endpoints
+        hidden_output = gr.JSON(visible=False)
+        
+        # Register the API endpoints
+        hidden_add_btn.click(api_add_document, inputs=[gr.Textbox(visible=False), gr.JSON(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="add")
+        hidden_search_btn.click(api_search_documents, inputs=[gr.Textbox(visible=False), gr.Number(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="search")
+        hidden_compare_btn.click(api_compare_documents, inputs=[gr.Textbox(visible=False), gr.Textbox(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="compare")
+        hidden_list_btn.click(api_list_documents, inputs=[gr.Textbox(visible=False)], outputs=hidden_output, api_name="documents")
+        hidden_delete_btn.click(api_delete_document, inputs=[gr.Textbox(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="delete")
+        hidden_pdf_btn.click(api_add_pdf_document, inputs=[gr.File(visible=False), gr.JSON(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="add_pdf")
 
 if __name__ == "__main__":
     demo.launch()
