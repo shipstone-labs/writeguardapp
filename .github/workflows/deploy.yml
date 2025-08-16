@@ -41,8 +41,8 @@ jobs:
           NEXT_PUBLIC_CHAIN_NAME: Base
           NEXT_PUBLIC_RPC_URL: https://mainnet.base.org
 
+      # Deploy to Cloudflare Pages using Direct Upload
       - name: Deploy to Cloudflare Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -50,3 +50,4 @@ jobs:
           projectName: writeguardapp
           directory: out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref || github.ref_name }}

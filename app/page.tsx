@@ -74,14 +74,16 @@ export default function Home() {
                   Connect your wallet to get started
                 </p>
               </div>
-            ) : !showUpload ? (
-              <button
-                onClick={() => setShowUpload(true)}
-                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                Protect Your Paper Now
-              </button>
-            ) : null}
+            ) : (
+              !showUpload && (
+                <button
+                  onClick={() => setShowUpload(true)}
+                  className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  Protect Your Paper Now
+                </button>
+              )
+            )}
           </div>
         </section>
 
