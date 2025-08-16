@@ -1,6 +1,6 @@
 # WriteguardApp
 
-Protect your research papers on the blockchain. Register and mint research papers as NFTs on Base to protect against unauthorized use.
+Protect your research papers on the blockchain. Mint research papers as NFTs on Base to protect against unauthorized use.
 
 ## Features
 

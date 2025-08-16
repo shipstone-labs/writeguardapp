@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "WriteguardApp - Protect Your Research",
-  description: "Register and protect your research papers on the blockchain",
+  description: "Protect your research papers on the blockchain against unauthorized use",
 };
 
 export default function RootLayout({

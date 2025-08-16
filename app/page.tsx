@@ -47,7 +47,7 @@ export default function Home() {
             Protect Your Research
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            Register your research papers on the blockchain to protect against unauthorized use
+            Protect your research papers on the blockchain against unauthorized use
           </p>
         </div>
 
