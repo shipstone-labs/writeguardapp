@@ -94,14 +94,12 @@ export default function MintButton({ fileHash, fileName }: MintButtonProps) {
       <button
         onClick={handleMint}
         disabled={isDisabled}
-        className={`
-          w-full px-6 py-3 rounded-lg font-medium transition-all duration-200
-          ${isDisabled
-            ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-          }
-          ${isConfirmed ? 'bg-green-600 hover:bg-green-600' : ''}
-        `}
+        className="w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-600 dark:disabled:text-gray-400"
+        style={{
+          backgroundColor: isDisabled ? '#9CA3AF' : isConfirmed ? '#10B981' : '#2563EB',
+          color: '#FFFFFF',
+          cursor: isDisabled ? 'not-allowed' : 'pointer'
+        }}
       >
         {getButtonText()}
       </button>
@@ -117,15 +115,15 @@ export default function MintButton({ fileHash, fileName }: MintButtonProps) {
       {isConfirmed && hash && (
         <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
           <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-            ✓ Paper successfully minted!
+            ✓ NFT successfully minted!
           </p>
           <a
-            href={`https://basescan.org/tx/${hash}`}
+            href={`https://sepolia.basescan.org/tx/${hash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
-            View transaction →
+            View on BaseScan →
           </a>
         </div>
       )}
