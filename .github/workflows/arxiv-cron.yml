@@ -1,0 +1,26 @@
+name: ArXiv Paper Fetcher
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  fetch-papers:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Fetch arXiv Papers
+      run: |
+        curl -X POST "${{ secrets.HF_SPACES_URL }}/api/arxiv/fetch" \
+          -H "Content-Type: application/json" \
+          -H "X-API-Key: ${{ secrets.API_KEY }}" \
+          -d '{}' \
+          --max-time 600 \
+          --retry 3
+        
+        echo "✅ arXiv fetch completed"
+
+    - name: Health Check
+      run: |
+        curl -s "${{ secrets.HF_SPACES_URL }}/api/health" | jq '.'
