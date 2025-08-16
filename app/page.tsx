@@ -24,7 +24,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-center items-center h-16">
             <div className="flex items-center gap-3">
               <Image
                 src="/writeguard-logo.png"
@@ -36,15 +36,6 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 WriteGuard
               </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <Wallet>
-                <ConnectWallet />
-                <WalletDropdown>
-                  <WalletDropdownBasename />
-                  <WalletDropdownDisconnect />
-                </WalletDropdown>
-              </Wallet>
             </div>
           </div>
         </div>
@@ -69,10 +60,17 @@ export default function Home() {
             </p>
             
             {!isConnected ? (
-              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-6 max-w-md mx-auto">
-                <p className="text-lg text-blue-900 dark:text-blue-100">
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-lg text-gray-600 dark:text-gray-300">
                   Connect your wallet to get started
                 </p>
+                <Wallet>
+                  <ConnectWallet className="px-8 py-4 text-lg font-semibold" />
+                  <WalletDropdown>
+                    <WalletDropdownBasename />
+                    <WalletDropdownDisconnect />
+                  </WalletDropdown>
+                </Wallet>
               </div>
             ) : !showUpload ? (
               <button
