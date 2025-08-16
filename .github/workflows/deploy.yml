@@ -46,3 +46,14 @@ jobs:
           projectName: writeguardapp
           directory: out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Preview to Cloudflare Pages
+        if: github.event_name == 'pull_request'
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: writeguardapp
+          directory: out
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
