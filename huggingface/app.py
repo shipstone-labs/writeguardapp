@@ -937,7 +937,7 @@ with demo:
                 }
                 
             except Exception as e:
-                return {"error": f"Failed to process PDF: {str(e)}}"}
+                return {"error": f"Failed to process PDF: {str(e)}"}
         
         def trigger_fetch(max_papers, api_key=""):
             # Determine which storage to use based on API key
