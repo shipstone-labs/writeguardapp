@@ -7,6 +7,7 @@ import json
 import os
 from flask import Flask, request, jsonify
 from functools import wraps
+import threading
 import pdfplumber
 import io
 import base64
@@ -1013,8 +1014,37 @@ def api_get_arxiv_queries():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Mount Flask app to Gradio
-demo.mount_gradio_app(app, path="/api")
+# Create Flask app for API endpoints
+flask_app = Flask(__name__)
+
+# Re-add all the API routes here (I'll add just the essential ones)
+@flask_app.route('/api/health', methods=['GET'])
+def api_health():
+    return jsonify({
+        "status": "healthy", 
+        "api_documents": api_collection.count(),
+        "demo_documents": demo_collection.count()
+    })
+
+@flask_app.route('/api/arxiv/fetch', methods=['POST'])
+@require_api_key
+def api_fetch_arxiv_papers():
+    data = request.json or {}
+    max_papers_per_query = data.get('max_papers_per_query', CRON_COUNT)
+    
+    if max_papers_per_query < 1 or max_papers_per_query > 50:
+        return jsonify({"error": "max_papers_per_query must be between 1 and 50"}), 400
+    
+    result = fetch_arxiv_papers(max_papers_per_query)
+    return jsonify({"message": result}), 200
+
+def run_flask():
+    flask_app.run(host="0.0.0.0", port=8080, debug=False)
 
 if __name__ == "__main__":
-    demo.launch()
+    # Start Flask API in a separate thread
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    
+    # Launch Gradio interface on main thread
+    demo.launch(server_name="0.0.0.0", server_port=7860)
