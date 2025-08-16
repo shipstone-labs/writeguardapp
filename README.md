@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WriteguardApp
+
+Protect your research papers on the blockchain. Register and mint research papers as NFTs on Base to protect against unauthorized use.
+
+## Features
+
+- 🔐 **Blockchain Protection**: Mint your research papers as NFTs on Base blockchain
+- 📄 **File Upload**: Support for PDF, TXT, MD, and DOCX formats  
+- 🔗 **Coinbase Wallet Integration**: Seamless wallet connection with smart wallet support
+- 🔍 **SHA-256 Hashing**: Cryptographic fingerprinting of uploaded documents
+- ⚡ **Static Site**: Fast, serverless deployment on Cloudflare Pages
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
+- **Blockchain**: Base (Ethereum L2), OnchainKit, Wagmi, Viem
+- **Wallet**: Coinbase Wallet, RainbowKit
+- **Deployment**: Cloudflare Pages
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm or pnpm
+- Coinbase Wallet or compatible Web3 wallet
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/shipstone-labs/writeguardapp.git
+cd writeguardapp
+
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.local.example .env.local
+```
+
+### Environment Variables
+
+Create a `.env.local` file with:
+
+```env
+# OnchainKit Configuration
+NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_api_key_here
+NEXT_PUBLIC_WC_PROJECT_ID=your_walletconnect_project_id
+
+# Base Network Configuration
+NEXT_PUBLIC_CHAIN_ID=8453
+NEXT_PUBLIC_CHAIN_NAME=Base
+NEXT_PUBLIC_RPC_URL=https://mainnet.base.org
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build & Deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Build for production
+npm run build
 
-## Learn More
+# Deploy to Cloudflare Pages
+npm run pages:deploy
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Smart Contract
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The minting functionality requires deploying a smart contract on Base. Update the contract address in `components/MintButton.tsx`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```typescript
+const CONTRACT_ADDRESS = 'your_deployed_contract_address';
+```
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+writeguardapp/
+├── app/
+│   ├── page.tsx          # Main application page
+│   ├── providers.tsx     # Web3 providers configuration
+│   └── layout.tsx        # Root layout with providers
+├── components/
+│   ├── FileUpload.tsx    # File upload component with hashing
+│   └── MintButton.tsx    # NFT minting interface
+├── public/               # Static assets
+└── next.config.ts        # Next.js configuration
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Workflow
+
+1. **Connect Wallet**: Users connect their Coinbase Wallet or compatible Web3 wallet
+2. **Upload Paper**: Drag and drop or select research paper (PDF, TXT, MD, DOCX)
+3. **Generate Hash**: SHA-256 hash is automatically generated for the file
+4. **Mint NFT**: Paper is minted as an NFT on Base blockchain
+5. **Protection**: The NFT serves as proof of authorship and timestamp
+
+## Future Features
+
+- Integration with HuggingFace for paper modeling
+- Automated plagiarism detection via arxiv crawling
+- Violation NFT system for copyright protection
+- Payment resolution for violations
+
+## License
+
+MIT
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Support
+
+For questions or support, please open an issue on GitHub.
