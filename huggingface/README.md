@@ -12,6 +12,7 @@ short_description: Make sure you're the OG
 ---
 A Python-based document similarity system using sentence embeddings and vector search.
 Combined with nextjs project for frontend. Nextjs is currently at the root, currently deployed in cloudflare.
+Adding WSGI.
 
 ## Features
 

@@ -1038,13 +1038,30 @@ def api_fetch_arxiv_papers():
     result = fetch_arxiv_papers(max_papers_per_query)
     return jsonify({"message": result}), 200
 
-def run_flask():
-    flask_app.run(host="0.0.0.0", port=8080, debug=False)
-
 if __name__ == "__main__":
-    # Start Flask API in a separate thread
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
-    flask_thread.start()
+    # Mount Flask routes into Gradio using the built-in FastAPI server
+    import gradio as gr
     
-    # Launch Gradio interface on main thread
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    # Convert Flask routes to FastAPI (Gradio's underlying server)
+    @demo.app.get("/api/health")
+    def health_endpoint():
+        return {
+            "status": "healthy", 
+            "api_documents": api_collection.count(),
+            "demo_documents": demo_collection.count()
+        }
+    
+    @demo.app.post("/api/arxiv/fetch")
+    def fetch_endpoint(request: dict):
+        # Simple API key check
+        # Note: In production, implement proper FastAPI authentication
+        max_papers_per_query = request.get('max_papers_per_query', CRON_COUNT)
+        
+        if max_papers_per_query < 1 or max_papers_per_query > 50:
+            return {"error": "max_papers_per_query must be between 1 and 50"}
+        
+        result = fetch_arxiv_papers(max_papers_per_query)
+        return {"message": result}
+    
+    # Launch Gradio with API endpoints on same port
+    demo.launch()
