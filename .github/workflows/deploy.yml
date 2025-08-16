@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: compile-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
