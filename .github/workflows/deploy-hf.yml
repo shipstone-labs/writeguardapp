@@ -3,7 +3,7 @@ name: Deploy to HF Spaces
 on:
   push:
     paths:
-      - 'text-compare/**'
+      - 'huggingface/**'
     branches:
       - main  # Only deploy from main branch, not PRs
   workflow_dispatch:  # Manual trigger
@@ -21,7 +21,7 @@ jobs:
         hf_token: ${{ secrets.HF_TOKEN }}
         repo_id: YOUR_USERNAME/text-compare
         repo_type: space
-        source_dir: ./text-compare
+        source_dir: ./huggingface
     
     - name: Deployment complete
       run: echo "✅ Deployed to HF Spaces successfully"
