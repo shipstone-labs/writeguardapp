@@ -213,9 +213,36 @@ export default function Home() {
                       Hash: {fileHash}
                     </p>
                     {ipfsCid && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 font-mono break-all">
-                        IPFS: {ipfsCid}
-                      </p>
+                      <div className="mb-4">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
+                          IPFS CID: {ipfsCid}
+                        </p>
+                        <div className="mt-2 flex gap-2">
+                          <a
+                            href={`https://ipfs.io/ipfs/${ipfsCid}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            View on IPFS Gateway
+                          </a>
+                          <span className="text-xs text-gray-400">•</span>
+                          <a
+                            href={`https://gateway.pinata.cloud/ipfs/${ipfsCid}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Pinata Gateway
+                          </a>
+                        </div>
+                      </div>
                     )}
                     <MintButton fileHash={fileHash} fileName={uploadedFile.name} ipfsCid={ipfsCid} />
                   </div>
