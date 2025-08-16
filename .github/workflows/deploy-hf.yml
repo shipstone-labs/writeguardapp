@@ -30,9 +30,10 @@ jobs:
     - name: Deploy to HF Spaces
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_NAME: ${{ secrets.HF_NAME }}
       run: |
         cd huggingface
-        huggingface-cli upload YOUR_USERNAME/text-compare . --repo-type=space --token=$HF_TOKEN
+        hf upload $HF_NAME . --repo-type=space --token=$HF_TOKEN
     
     - name: Deployment complete
       run: echo "✅ Deployed to HF Spaces successfully"
