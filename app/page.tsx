@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { 
   Wallet,
@@ -23,9 +24,16 @@ export default function Home() {
       <header className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/writeguard-logo.png"
+                alt="WriteGuard Logo"
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                WriteguardApp
+                WriteGuard
               </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -43,6 +51,13 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
+          <Image
+            src="/writeguard-logo.png"
+            alt="WriteGuard"
+            width={120}
+            height={120}
+            className="mx-auto mb-6 rounded-2xl shadow-xl"
+          />
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Protect Your Research
           </h2>
