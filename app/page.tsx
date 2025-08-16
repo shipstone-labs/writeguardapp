@@ -70,12 +70,9 @@ export default function Home() {
             
             {!isConnected ? (
               <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-6 max-w-md mx-auto">
-                <p className="text-lg text-blue-900 dark:text-blue-100 mb-4">
+                <p className="text-lg text-blue-900 dark:text-blue-100">
                   Connect your wallet to get started
                 </p>
-                <Wallet>
-                  <ConnectWallet className="!w-full" />
-                </Wallet>
               </div>
             ) : !showUpload ? (
               <button
