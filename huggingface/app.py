@@ -739,42 +739,295 @@ with gr.Blocks(title="Document Similarity Demo", theme=gr.themes.Soft()) as demo
 
 # Flask app code removed - using Gradio API instead
 
-# Add API tab to existing demo
-with demo:
-    with gr.Tab("🔌 API Status"):
+# Create separate API demo interface
+def create_api_demo():
+    with gr.Blocks(title="Document Similarity API Documentation", theme=gr.themes.Soft()) as api_demo:
         gr.Markdown("""
-        ### API Endpoints Available
+        # 📚 Document Similarity API Documentation
         
-        This space provides API endpoints that can be called programmatically:
+        Welcome to the Document Similarity API! This API provides semantic document search and management capabilities using Sentence-BERT embeddings and ChromaDB vector storage.
         
-        - **Health Check**: `/api/health` (public, no auth needed)
-        - **Add Document**: `/api/add` (requires API key)
-        - **Add PDF**: `/api/add_pdf` (requires API key)  
-        - **Search Documents**: `/api/search` (requires API key)
-        - **Compare Documents**: `/api/compare` (requires API key)
-        - **List Documents**: `/api/documents` (requires API key)
-        - **Delete Document**: `/api/delete` (requires API key)
-        - **Fetch Papers**: `/api/arxiv_fetch` (optional auth)
+        ## 🔐 Authentication
         
-        **Storage Behavior:**
-        - 🔓 **Without API key**: Papers go to demo storage (public playground) - **Limited to 1 paper**
-        - 🔐 **With valid API key**: Documents/papers go to production API storage (private)
+        Most endpoints require an API key passed as a parameter. Contact the administrator for access.
         
-        API documentation: Add `?view=api` to the URL
+        ## 📖 API Reference
         """)
         
-        with gr.Row():
-            health_btn = gr.Button("Check API Health")
-            health_output = gr.JSON(label="Health Status")
+        # Health Check Section
+        with gr.Group():
+            gr.Markdown("## 🏥 Health Check")
+            gr.Markdown("""
+            **Endpoint**: `GET /api/health`  
+            **Authentication**: None required  
+            **Description**: Check API status and document counts
+            
+            ### Response Example:
+            ```json
+            {
+              "status": "healthy",
+              "api_documents": 42,
+              "demo_documents": 7
+            }
+            ```
+            """)
+            
+            with gr.Row():
+                health_btn = gr.Button("🔍 Test Health Check", variant="primary")
+                health_output = gr.JSON(label="Response")
         
-        with gr.Row():
-            with gr.Column():
-                fetch_papers_input = gr.Number(value=1, minimum=1, maximum=50, label="Papers to Fetch", info="Public demo: 1 max, API key: up to 50")
-                api_key_input = gr.Textbox(label="API Key (Optional)", type="password", placeholder="Leave empty for demo storage, or enter key for production storage")
-            with gr.Column():
-                fetch_papers_btn = gr.Button("Fetch Papers")
-                fetch_output = gr.JSON(label="Fetch Result")
+        # Document Management Section  
+        with gr.Group():
+            gr.Markdown("## 📄 Document Management")
+            
+            gr.Markdown("""
+            ### Add Document
+            **Endpoint**: `POST /api/add`  
+            **Authentication**: Required  
+            **Description**: Add a new text document to the vector database
+            
+            **Parameters**:
+            - `content` (string, required): The document text content
+            - `metadata` (object, optional): Additional metadata as JSON
+            - `api_key` (string, required): Your API authentication key
+            
+            **Response Example**:
+            ```json
+            {
+              "message": "Document added",
+              "id": "abc123def456"
+            }
+            ```
+            """)
+            
+            gr.Markdown("""
+            ### Add PDF Document  
+            **Endpoint**: `POST /api/add_pdf`  
+            **Authentication**: Required  
+            **Description**: Upload and process a PDF file, extracting text and adding to vector database
+            
+            **Parameters**:
+            - `pdf_file` (file, required): PDF file to upload
+            - `metadata` (object, optional): Additional metadata as JSON  
+            - `api_key` (string, required): Your API authentication key
+            
+            **Response Example**:
+            ```json
+            {
+              "message": "PDF processed and document added",
+              "id": "pdf789ghi012", 
+              "filename": "document.pdf",
+              "text_length": 5420,
+              "pages": 12
+            }
+            ```
+            """)
+            
+            gr.Markdown("""
+            ### Search Documents
+            **Endpoint**: `POST /api/search`  
+            **Authentication**: Required  
+            **Description**: Search for semantically similar documents
+            
+            **Parameters**:
+            - `query` (string, required): Search query text
+            - `n_results` (integer, optional): Number of results to return (default: 5)
+            - `api_key` (string, required): Your API authentication key
+            
+            **Response Example**:
+            ```json
+            {
+              "results": [
+                {
+                  "id": "doc123",
+                  "similarity": 0.89,
+                  "content": "Machine learning is...",
+                  "metadata": {"source": "api", "category": "ML"}
+                }
+              ],
+              "query": "artificial intelligence"
+            }
+            ```
+            """)
+            
+            gr.Markdown("""
+            ### Compare Documents
+            **Endpoint**: `POST /api/compare`  
+            **Authentication**: Required  
+            **Description**: Calculate semantic similarity between two text documents
+            
+            **Parameters**:
+            - `doc1` (string, required): First document text
+            - `doc2` (string, required): Second document text  
+            - `api_key` (string, required): Your API authentication key
+            
+            **Response Example**:
+            ```json
+            {
+              "similarity": 0.7234,
+              "percentage": 72.34,
+              "doc1_preview": "Machine learning is a subset...",
+              "doc2_preview": "Artificial intelligence encompasses..."
+            }
+            ```
+            """)
+            
+            gr.Markdown("""
+            ### List All Documents
+            **Endpoint**: `GET /api/documents`  
+            **Authentication**: Required  
+            **Description**: Retrieve all documents in the database
+            
+            **Parameters**:
+            - `api_key` (string, required): Your API authentication key
+            
+            **Response Example**:
+            ```json
+            {
+              "documents": [
+                {
+                  "id": "doc123",
+                  "content": "Full document text...",
+                  "metadata": {"source": "api", "category": "ML"}
+                }
+              ],
+              "count": 1
+            }
+            ```
+            """)
+            
+            gr.Markdown("""
+            ### Delete Document
+            **Endpoint**: `DELETE /api/delete`  
+            **Authentication**: Required  
+            **Description**: Remove a document from the database
+            
+            **Parameters**:
+            - `doc_id` (string, required): Document ID to delete
+            - `api_key` (string, required): Your API authentication key
+            
+            **Response Example**:
+            ```json
+            {
+              "message": "Document deleted",
+              "id": "doc123"
+            }
+            ```
+            """)
         
+        # arXiv Integration Section
+        with gr.Group():
+            gr.Markdown("## 📚 arXiv Paper Integration")
+            gr.Markdown("""
+            ### Fetch arXiv Papers
+            **Endpoint**: `POST /api/arxiv_fetch`  
+            **Authentication**: Optional (affects limits and storage)  
+            **Description**: Automatically fetch and process arXiv papers based on configured queries
+            
+            **Parameters**:
+            - `max_papers` (integer, required): Number of papers to fetch per query (1-50)
+            - `api_key` (string, optional): Your API authentication key
+            
+            **Storage Behavior**:
+            - 🔓 **Without API key**: Papers go to demo storage, limited to 1 paper
+            - 🔐 **With valid API key**: Papers go to production storage, up to 50 papers
+            
+            **Response Example**:
+            ```json
+            {
+              "message": "Would fetch 5 papers to API storage",
+              "storage_used": "API storage (production)", 
+              "papers_requested": 5,
+              "authenticated": true,
+              "limit_applied": "5 papers max"
+            }
+            ```
+            """)
+            
+            with gr.Row():
+                with gr.Column():
+                    fetch_papers_input = gr.Number(value=1, minimum=1, maximum=50, label="Papers to Fetch", info="Public demo: 1 max, API key: up to 50")
+                    api_key_input = gr.Textbox(label="API Key (Optional)", type="password", placeholder="Leave empty for demo storage, or enter key for production storage")
+                with gr.Column():
+                    fetch_papers_btn = gr.Button("🔄 Test Fetch Papers", variant="secondary") 
+                    fetch_output = gr.JSON(label="Response")
+        
+        # Usage Examples Section
+        with gr.Group():
+            gr.Markdown("""
+            ## 💡 Usage Examples
+            
+            ### Python Example
+            ```python
+            import requests
+            
+            # Health check (no auth required)
+            response = requests.get("https://your-space.hf.space/api/health")
+            print(response.json())
+            
+            # Add a document (requires API key)
+            payload = {
+                "content": "Machine learning is transforming industries...",
+                "metadata": {"category": "AI", "source": "blog"}, 
+                "api_key": "your-api-key"
+            }
+            response = requests.post("https://your-space.hf.space/api/add", json=payload)
+            print(response.json())
+            
+            # Search for similar documents
+            search_payload = {
+                "query": "artificial intelligence applications",
+                "n_results": 3,
+                "api_key": "your-api-key"
+            }
+            response = requests.post("https://your-space.hf.space/api/search", json=search_payload)
+            print(response.json())
+            ```
+            
+            ### curl Example
+            ```bash
+            # Health check
+            curl -X GET "https://your-space.hf.space/api/health"
+            
+            # Add document
+            curl -X POST "https://your-space.hf.space/api/add" \\
+                 -H "Content-Type: application/json" \\
+                 -d '{
+                   "content": "Your document text here",
+                   "metadata": {"category": "example"},
+                   "api_key": "your-api-key"
+                 }'
+            
+            # Search documents  
+            curl -X POST "https://your-space.hf.space/api/search" \\
+                 -H "Content-Type: application/json" \\
+                 -d '{
+                   "query": "search term",
+                   "n_results": 5,
+                   "api_key": "your-api-key"
+                 }'
+            ```
+            """)
+        
+        # Rate Limits and Notes
+        with gr.Group():
+            gr.Markdown("""
+            ## ⚠️ Rate Limits & Notes
+            
+            - **Document Storage**: Authenticated requests use production storage, public requests use demo storage
+            - **arXiv Fetching**: Public users limited to 1 paper, authenticated users up to 50 papers per request
+            - **API Keys**: Contact administrator for production API key access
+            - **Embeddings**: Uses `all-MiniLM-L6-v2` Sentence-BERT model
+            - **Vector Database**: ChromaDB with cosine similarity search
+            - **File Formats**: PDF text extraction supported via pdfplumber
+            
+            ## 🔗 Quick Links
+            - **Live API Testing**: Add `?view=api` to this URL
+            - **Demo Interface**: [Main Application](/)
+            - **GitHub**: [Source Code](https://github.com/your-repo)
+            """)
+        
+        # Function definitions for API testing
         def check_health():
             return {
                 "status": "healthy", 
@@ -964,28 +1217,284 @@ with demo:
                 "limit_applied": "1 paper max" if api_key != API_KEY else f"{max_papers} papers max"
             }
         
-        health_btn.click(check_health, outputs=health_output, api_name="health")
-        fetch_papers_btn.click(trigger_fetch, inputs=[fetch_papers_input, api_key_input], outputs=fetch_output, api_name="arxiv_fetch")
+        # Connect button handlers
+        health_btn.click(check_health, outputs=health_output)
+        fetch_papers_btn.click(trigger_fetch, inputs=[fetch_papers_input, api_key_input], outputs=fetch_output)
+    
+    return api_demo
+
+# Create the API demo interface  
+api_demo = create_api_demo()
+
+# Add API endpoints to main demo
+with demo:
+    # Create hidden buttons to register API endpoints
+    # These buttons are not visible but make the functions available via API
+    hidden_add_btn = gr.Button("Add Document", visible=False)
+    hidden_search_btn = gr.Button("Search", visible=False) 
+    hidden_compare_btn = gr.Button("Compare", visible=False)
+    hidden_list_btn = gr.Button("List Documents", visible=False)
+    hidden_delete_btn = gr.Button("Delete Document", visible=False)
+    hidden_pdf_btn = gr.Button("Add PDF", visible=False)
+    
+    # Hidden outputs for API endpoints
+    hidden_output = gr.JSON(visible=False)
+    
+    # Function definitions for API endpoints
+    def check_health():
+        return {
+            "status": "healthy", 
+            "api_documents": api_collection.count(),
+            "demo_documents": demo_collection.count()
+        }
+    
+    def api_add_document(content: str, metadata: dict = None, api_key: str = ""):
+        if api_key != API_KEY:
+            return {"error": "Invalid or missing API key"}
         
-        # Create hidden buttons to register API endpoints
-        # These buttons are not visible but make the functions available via API
-        hidden_add_btn = gr.Button("Add Document", visible=False)
-        hidden_search_btn = gr.Button("Search", visible=False) 
-        hidden_compare_btn = gr.Button("Compare", visible=False)
-        hidden_list_btn = gr.Button("List Documents", visible=False)
-        hidden_delete_btn = gr.Button("Delete Document", visible=False)
-        hidden_pdf_btn = gr.Button("Add PDF", visible=False)
+        if not content:
+            return {"error": "Content is required"}
         
-        # Hidden outputs for API endpoints
-        hidden_output = gr.JSON(visible=False)
+        doc_id = generate_doc_id(content)
+        existing = api_collection.get(ids=[doc_id])
+        if existing['ids']:
+            return {"message": "Document already exists", "id": doc_id}
         
-        # Register the API endpoints
-        hidden_add_btn.click(api_add_document, inputs=[gr.Textbox(visible=False), gr.JSON(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="add")
-        hidden_search_btn.click(api_search_documents, inputs=[gr.Textbox(visible=False), gr.Number(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="search")
-        hidden_compare_btn.click(api_compare_documents, inputs=[gr.Textbox(visible=False), gr.Textbox(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="compare")
-        hidden_list_btn.click(api_list_documents, inputs=[gr.Textbox(visible=False)], outputs=hidden_output, api_name="documents")
-        hidden_delete_btn.click(api_delete_document, inputs=[gr.Textbox(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="delete")
-        hidden_pdf_btn.click(api_add_pdf_document, inputs=[gr.File(visible=False), gr.JSON(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="add_pdf")
+        embedding = model.encode(content).tolist()
+        meta_dict = {"source": "api"}
+        if metadata:
+            meta_dict.update(metadata)
+        
+        api_collection.add(
+            embeddings=[embedding],
+            documents=[content],
+            metadatas=[meta_dict],
+            ids=[doc_id]
+        )
+        
+        return {"message": "Document added", "id": doc_id}
+    
+    def api_search_documents(query: str, n_results: int = 5, api_key: str = ""):
+        if api_key != API_KEY:
+            return {"error": "Invalid or missing API key"}
+        
+        if not query:
+            return {"error": "Query is required"}
+        
+        doc_count = api_collection.count()
+        if doc_count == 0:
+            return {"results": [], "message": "No documents in database"}
+        
+        n_results = max(1, min(n_results, doc_count))
+        query_embedding = model.encode(query).tolist()
+        
+        results = api_collection.query(
+            query_embeddings=[query_embedding],
+            n_results=n_results
+        )
+        
+        formatted_results = []
+        for i in range(len(results['ids'][0])):
+            formatted_results.append({
+                "id": results['ids'][0][i],
+                "similarity": 1 - results['distances'][0][i],
+                "content": results['documents'][0][i],
+                "metadata": results['metadatas'][0][i]
+            })
+        
+        return {"results": formatted_results, "query": query}
+    
+    def api_compare_documents(doc1: str, doc2: str, api_key: str = ""):
+        if api_key != API_KEY:
+            return {"error": "Invalid or missing API key"}
+        
+        if not doc1 or not doc2:
+            return {"error": "Both documents are required"}
+        
+        embedding1 = model.encode(doc1)
+        embedding2 = model.encode(doc2)
+        
+        from numpy import dot
+        from numpy.linalg import norm
+        
+        similarity = float(dot(embedding1, embedding2) / (norm(embedding1) * norm(embedding2)))
+        
+        return {
+            "similarity": similarity,
+            "percentage": similarity * 100,
+            "doc1_preview": doc1[:100],
+            "doc2_preview": doc2[:100]
+        }
+    
+    def api_list_documents(api_key: str = ""):
+        if api_key != API_KEY:
+            return {"error": "Invalid or missing API key"}
+        
+        all_docs = api_collection.get()
+        
+        documents = []
+        for i in range(len(all_docs['ids'])):
+            documents.append({
+                "id": all_docs['ids'][i],
+                "content": all_docs['documents'][i],
+                "metadata": all_docs['metadatas'][i]
+            })
+        
+        return {"documents": documents, "count": len(documents)}
+    
+    def api_delete_document(doc_id: str, api_key: str = ""):
+        if api_key != API_KEY:
+            return {"error": "Invalid or missing API key"}
+        
+        try:
+            existing = api_collection.get(ids=[doc_id])
+            if not existing['ids']:
+                return {"error": "Document not found"}
+            
+            api_collection.delete(ids=[doc_id])
+            return {"message": "Document deleted", "id": doc_id}
+            
+        except Exception as e:
+            return {"error": f"Failed to delete document: {str(e)}"}
+    
+    def api_add_pdf_document(pdf_file, metadata: dict = None, api_key: str = ""):
+        if api_key != API_KEY:
+            return {"error": "Invalid or missing API key"}
+        
+        if pdf_file is None:
+            return {"error": "No PDF file provided"}
+        
+        try:
+            with open(pdf_file.name, 'rb') as f:
+                pdf_bytes = f.read()
+            
+            extracted_text = extract_text_from_pdf(pdf_bytes)
+            
+            if not extracted_text.strip():
+                return {"error": "No text found in PDF"}
+            
+            meta_dict = {"source": "pdf_upload", "filename": pdf_file.name.split('/')[-1]}
+            if metadata:
+                meta_dict.update(metadata)
+            
+            meta_dict["text_length"] = len(extracted_text)
+            meta_dict["pages"] = len(extracted_text.split('\n\n'))
+            
+            doc_id = generate_doc_id(extracted_text)
+            existing = api_collection.get(ids=[doc_id])
+            if existing['ids']:
+                return {"message": "Document already exists", "id": doc_id, "filename": pdf_file.name}
+            
+            embedding = model.encode(extracted_text).tolist()
+            
+            api_collection.add(
+                embeddings=[embedding],
+                documents=[extracted_text],
+                metadatas=[meta_dict],
+                ids=[doc_id]
+            )
+            
+            return {
+                "message": "PDF processed and document added",
+                "id": doc_id,
+                "filename": pdf_file.name.split('/')[-1],
+                "text_length": len(extracted_text),
+                "pages": meta_dict["pages"]
+            }
+            
+        except Exception as e:
+            return {"error": f"Failed to process PDF: {str(e)}"}
+    
+    def trigger_fetch(max_papers, api_key=""):
+        # Determine which storage to use based on API key
+        if api_key == API_KEY:
+            # Authenticated: production API storage, normal limits
+            if max_papers < 1 or max_papers > 50:
+                return {"error": "Papers count must be between 1 and 50"}
+            storage_type = "API storage (production)"
+            # For now, just simulate - we'd need to modify fetch_arxiv_papers to accept target collection
+            result = f"Would fetch {max_papers} papers to API storage (production data)"
+        else:
+            # Public demo: limit to 1 paper only
+            if max_papers != 1:
+                return {"error": "Public demo limited to 1 paper. Use API key for higher limits."}
+            storage_type = "Demo storage (public)"
+            result = "Would fetch 1 paper to demo storage (public playground)"
+            max_papers = 1  # Enforce limit
+        
+        return {
+            "message": result,
+            "storage_used": storage_type,
+            "papers_requested": max_papers,
+            "authenticated": api_key == API_KEY,
+            "limit_applied": "1 paper max" if api_key != API_KEY else f"{max_papers} papers max"
+        }
+    
+    # Register the API endpoints
+    hidden_add_btn.click(api_add_document, inputs=[gr.Textbox(visible=False), gr.JSON(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="add")
+    hidden_search_btn.click(api_search_documents, inputs=[gr.Textbox(visible=False), gr.Number(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="search")
+    hidden_compare_btn.click(api_compare_documents, inputs=[gr.Textbox(visible=False), gr.Textbox(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="compare")
+    hidden_list_btn.click(api_list_documents, inputs=[gr.Textbox(visible=False)], outputs=hidden_output, api_name="documents")
+    hidden_delete_btn.click(api_delete_document, inputs=[gr.Textbox(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="delete")
+    hidden_pdf_btn.click(api_add_pdf_document, inputs=[gr.File(visible=False), gr.JSON(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="add_pdf")
+    
+    # Also register health and arxiv_fetch endpoints
+    gr.Button("Health", visible=False).click(check_health, outputs=hidden_output, api_name="health")
+    gr.Button("Fetch", visible=False).click(trigger_fetch, inputs=[gr.Number(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="arxiv_fetch")
+
+# Create combined interface with API docs as last tab
+with demo:
+    with gr.Tab("📖 API Documentation"):
+        gr.Markdown("""
+        # 📚 Document Similarity API Documentation
+        
+        This space provides REST API endpoints for programmatic access to document similarity features.
+        
+        ## 🔐 Authentication
+        Most endpoints require an API key. Contact the administrator for production access.
+        
+        ## 📋 Quick Reference
+        
+        | Endpoint | Method | Auth | Description |
+        |----------|--------|------|-------------|
+        | `/api/health` | GET | None | Health check and document counts |
+        | `/api/add` | POST | Required | Add text document |
+        | `/api/add_pdf` | POST | Required | Upload and process PDF |
+        | `/api/search` | POST | Required | Search similar documents |
+        | `/api/compare` | POST | Required | Compare two documents |
+        | `/api/documents` | GET | Required | List all documents |
+        | `/api/delete` | DELETE | Required | Delete document |
+        | `/api/arxiv_fetch` | POST | Optional | Fetch arXiv papers |
+        
+        ## 📝 Example Usage
+        
+        ```python
+        import requests
+        
+        # Health check (no auth)
+        response = requests.get("https://your-space.hf.space/api/health")
+        
+        # Add document (requires API key)
+        response = requests.post("https://your-space.hf.space/api/add", json={
+            "content": "Your document text here",
+            "metadata": {"category": "example"},
+            "api_key": "your-api-key"
+        })
+        
+        # Search documents
+        response = requests.post("https://your-space.hf.space/api/search", json={
+            "query": "search term",
+            "n_results": 5,
+            "api_key": "your-api-key"
+        })
+        ```
+        
+        ## 🔗 Interactive API Testing
+        Add `?view=api` to this URL for interactive testing interface.
+        
+        ---
+        *For detailed documentation with request/response examples, contact the administrator.*
+        """)
 
 if __name__ == "__main__":
     demo.launch()
