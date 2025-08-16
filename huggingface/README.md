@@ -10,8 +10,6 @@ pinned: false
 license: mit
 short_description: Make sure you're the OG
 ---
-# Document Comparison System
-
 A Python-based document similarity system using sentence embeddings and vector search.
 
 ## Features
@@ -36,6 +34,7 @@ python document_compare.py
 ```
 
 The system provides:
+
 1. **Search**: Find documents similar to your query
 2. **Compare**: Get similarity score between two documents
 3. **Add**: Insert new documents with optional metadata
@@ -56,6 +55,7 @@ The system provides:
 ## Alternative Implementations
 
 For production systems consider:
+
 - **Node.js**: Use @xenova/transformers with ChromaDB JS client
 - **Go**: Integrate with Milvus or external embedding APIs
 - **Rust**: Use candle with Qdrant for maximum performance
