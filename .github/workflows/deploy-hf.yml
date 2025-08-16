@@ -8,6 +8,10 @@ on:
       - main  # Only deploy from main branch, not PRs
   workflow_dispatch:  # Manual trigger
 
+concurrency:
+  group: deploy-hf-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
