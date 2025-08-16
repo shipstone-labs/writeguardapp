@@ -5,32 +5,21 @@ from chromadb.config import Settings
 import hashlib
 import json
 import os
-from flask import Flask, request, jsonify
-from functools import wraps
-import threading
+# Flask imports removed - using Gradio API instead
+# from flask import Flask, request, jsonify
+# from functools import wraps
 import pdfplumber
 import io
-import base64
 import requests
-import feedparser
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
 import random
 import time
 from datetime import datetime
 
-# API Key Authentication for Flask endpoints
+# API Key Authentication for Gradio API endpoints
 API_KEY = os.environ.get('API_KEY', 'demo-api-key-change-in-production')
 CRON_COUNT = int(os.environ.get('CRON_COUNT', '10'))  # Default 10 papers per query for cron runs
-
-def require_api_key(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
-        if not api_key or api_key != API_KEY:
-            return jsonify({'error': 'Invalid or missing API key'}), 401
-        return f(*args, **kwargs)
-    return decorated_function
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -748,297 +737,7 @@ with gr.Blocks(title="Document Similarity Demo", theme=gr.themes.Soft()) as demo
         demo.load(display_queries, outputs=queries_display)
         demo.load(display_arxiv_papers, outputs=arxiv_papers_display)
 
-# Create Flask app for API endpoints
-app = Flask(__name__)
-
-@app.route('/api/health', methods=['GET'])
-def api_health():
-    return jsonify({
-        "status": "healthy", 
-        "api_documents": api_collection.count(),
-        "demo_documents": demo_collection.count()
-    })
-
-@app.route('/api/add', methods=['POST'])
-@require_api_key
-def api_add_document():
-    data = request.json
-    content = data.get('content', '')
-    metadata = data.get('metadata', {})
-    
-    if not content:
-        return jsonify({"error": "Content is required"}), 400
-    
-    doc_id = generate_doc_id(content)
-    
-    existing = api_collection.get(ids=[doc_id])
-    if existing['ids']:
-        return jsonify({"message": "Document already exists", "id": doc_id}), 200
-    
-    embedding = model.encode(content).tolist()
-    
-    # Ensure metadata is not empty
-    meta_dict = {"source": "api"}
-    meta_dict.update(metadata)
-    
-    api_collection.add(
-        embeddings=[embedding],
-        documents=[content],
-        metadatas=[meta_dict],
-        ids=[doc_id]
-    )
-    
-    return jsonify({"message": "Document added", "id": doc_id}), 201
-
-@app.route('/api/add-pdf', methods=['POST'])
-@require_api_key
-def api_add_pdf():
-    try:
-        # Check if file is in request
-        if 'pdf' not in request.files:
-            return jsonify({"error": "No PDF file provided"}), 400
-        
-        pdf_file = request.files['pdf']
-        if pdf_file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
-        
-        if not pdf_file.filename.lower().endswith('.pdf'):
-            return jsonify({"error": "File must be a PDF"}), 400
-        
-        # Read PDF bytes
-        pdf_bytes = pdf_file.read()
-        
-        # Extract text from PDF
-        try:
-            extracted_text = extract_text_from_pdf(pdf_bytes)
-        except ValueError as e:
-            return jsonify({"error": str(e)}), 400
-        
-        if not extracted_text.strip():
-            return jsonify({"error": "No text found in PDF"}), 400
-        
-        # Get metadata from form data
-        metadata = {}
-        if request.form.get('metadata'):
-            try:
-                metadata = json.loads(request.form.get('metadata'))
-            except:
-                metadata = {"note": request.form.get('metadata')}
-        
-        # Add filename to metadata
-        metadata.update({
-            "source": "pdf_upload",
-            "filename": pdf_file.filename,
-            "pages": len(extracted_text.split('\n\n'))
-        })
-        
-        # Generate doc ID from extracted text
-        doc_id = generate_doc_id(extracted_text)
-        
-        # Check if document already exists
-        existing = api_collection.get(ids=[doc_id])
-        if existing['ids']:
-            return jsonify({"message": "Document already exists", "id": doc_id, "filename": pdf_file.filename}), 200
-        
-        # Create embedding and add to collection
-        embedding = model.encode(extracted_text).tolist()
-        
-        api_collection.add(
-            embeddings=[embedding],
-            documents=[extracted_text],
-            metadatas=[metadata],
-            ids=[doc_id]
-        )
-        
-        return jsonify({
-            "message": "PDF processed and document added",
-            "id": doc_id,
-            "filename": pdf_file.filename,
-            "text_length": len(extracted_text),
-            "pages": metadata["pages"]
-        }), 201
-        
-    except Exception as e:
-        return jsonify({"error": f"Failed to process PDF: {str(e)}"}), 500
-
-@app.route('/api/search', methods=['POST'])
-@require_api_key
-def api_search():
-    data = request.json
-    query = data.get('query', '')
-    n_results = data.get('n_results', 5)
-    
-    if not query:
-        return jsonify({"error": "Query is required"}), 400
-    
-    doc_count = api_collection.count()
-    if doc_count == 0:
-        return jsonify({"results": [], "message": "No documents in database"}), 200
-    
-    n_results = max(1, min(n_results, doc_count))
-    query_embedding = model.encode(query).tolist()
-    
-    results = api_collection.query(
-        query_embeddings=[query_embedding],
-        n_results=n_results
-    )
-    
-    formatted_results = []
-    for i in range(len(results['ids'][0])):
-        formatted_results.append({
-            "id": results['ids'][0][i],
-            "similarity": 1 - results['distances'][0][i],
-            "content": results['documents'][0][i],
-            "metadata": results['metadatas'][0][i]
-        })
-    
-    return jsonify({"results": formatted_results, "query": query})
-
-@app.route('/api/compare', methods=['POST'])
-@require_api_key
-def api_compare():
-    data = request.json
-    doc1 = data.get('doc1', '')
-    doc2 = data.get('doc2', '')
-    
-    if not doc1 or not doc2:
-        return jsonify({"error": "Both documents are required"}), 400
-    
-    embedding1 = model.encode(doc1)
-    embedding2 = model.encode(doc2)
-    
-    from numpy import dot
-    from numpy.linalg import norm
-    
-    similarity = float(dot(embedding1, embedding2) / (norm(embedding1) * norm(embedding2)))
-    
-    return jsonify({
-        "similarity": similarity,
-        "percentage": similarity * 100,
-        "doc1_preview": doc1[:100],
-        "doc2_preview": doc2[:100]
-    })
-
-@app.route('/api/documents', methods=['GET'])
-@require_api_key
-def api_get_all_documents():
-    all_docs = api_collection.get()
-    
-    documents = []
-    for i in range(len(all_docs['ids'])):
-        documents.append({
-            "id": all_docs['ids'][i],
-            "content": all_docs['documents'][i],
-            "metadata": all_docs['metadatas'][i]
-        })
-    
-    return jsonify({"documents": documents, "count": len(documents)})
-
-@app.route('/api/documents/<doc_id>', methods=['DELETE'])
-@require_api_key
-def api_delete_document(doc_id):
-    try:
-        # Check if document exists
-        existing = api_collection.get(ids=[doc_id])
-        if not existing['ids']:
-            return jsonify({"error": "Document not found"}), 404
-        
-        # Delete the document
-        api_collection.delete(ids=[doc_id])
-        return jsonify({"message": "Document deleted", "id": doc_id}), 200
-        
-    except Exception as e:
-        return jsonify({"error": f"Failed to delete document: {str(e)}"}), 500
-
-@app.route('/api/clear', methods=['DELETE'])
-@require_api_key
-def api_clear_database():
-    global api_collection
-    try:
-        chroma_client.delete_collection("api_documents")
-    except:
-        pass
-    api_collection = chroma_client.create_collection(
-        name="api_documents",
-        metadata={"hnsw:space": "cosine"}
-    )
-    return jsonify({"message": "API database cleared"})
-
-@app.route('/api/arxiv/add-query', methods=['POST'])
-@require_api_key
-def api_add_arxiv_query():
-    data = request.json
-    query = data.get('query', '')
-    subject_matter = data.get('subject_matter', '')
-    
-    if not query or not subject_matter:
-        return jsonify({"error": "Both query and subject_matter are required"}), 400
-    
-    result = add_arxiv_query(query, subject_matter)
-    
-    if "Error" in result:
-        return jsonify({"error": result}), 500
-    
-    return jsonify({"message": result}), 201
-
-@app.route('/api/arxiv/fetch', methods=['POST'])
-@require_api_key
-def api_fetch_arxiv_papers():
-    data = request.json or {}
-    max_papers_per_query = data.get('max_papers_per_query', CRON_COUNT)
-    
-    if max_papers_per_query < 1 or max_papers_per_query > 50:
-        return jsonify({"error": "max_papers_per_query must be between 1 and 50"}), 400
-    
-    result = fetch_arxiv_papers(max_papers_per_query)
-    
-    return jsonify({"message": result}), 200
-
-@app.route('/api/arxiv/queries', methods=['GET'])
-@require_api_key
-def api_get_arxiv_queries():
-    try:
-        all_queries = arxiv_queries_collection.get()
-        
-        queries = []
-        for i, query_id in enumerate(all_queries['ids']):
-            metadata = all_queries['metadatas'][i]
-            queries.append({
-                "id": query_id,
-                "query": metadata['query'],
-                "subject_matter": metadata['subject_matter'],
-                "added_date": metadata.get('added_date'),
-                "last_run": metadata.get('last_run'),
-                "papers_added": metadata.get('papers_added', 0)
-            })
-        
-        return jsonify({"queries": queries, "count": len(queries)})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Create Flask app for API endpoints
-flask_app = Flask(__name__)
-
-# Re-add all the API routes here (I'll add just the essential ones)
-@flask_app.route('/api/health', methods=['GET'])
-def api_health():
-    return jsonify({
-        "status": "healthy", 
-        "api_documents": api_collection.count(),
-        "demo_documents": demo_collection.count()
-    })
-
-@flask_app.route('/api/arxiv/fetch', methods=['POST'])
-@require_api_key
-def api_fetch_arxiv_papers():
-    data = request.json or {}
-    max_papers_per_query = data.get('max_papers_per_query', CRON_COUNT)
-    
-    if max_papers_per_query < 1 or max_papers_per_query > 50:
-        return jsonify({"error": "max_papers_per_query must be between 1 and 50"}), 400
-    
-    result = fetch_arxiv_papers(max_papers_per_query)
-    return jsonify({"message": result}), 200
+# Flask app code removed - using Gradio API instead
 
 # Add API tab to existing demo
 with demo:
@@ -1091,7 +790,7 @@ with demo:
                 if max_papers != 1:
                     return {"error": "Public demo limited to 1 paper. Use API key for higher limits."}
                 storage_type = "Demo storage (public)"
-                result = f"Would fetch 1 paper to demo storage (public playground)"
+                result = "Would fetch 1 paper to demo storage (public playground)"
                 max_papers = 1  # Enforce limit
             
             return {
