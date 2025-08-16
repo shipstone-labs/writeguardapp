@@ -11,7 +11,7 @@ license: mit
 short_description: Make sure you're the OG
 ---
 A Python-based document similarity system using sentence embeddings and vector search.
-Combined with nextjs project for frontend.
+Combined with nextjs project for frontend. Nextjs is currently at the root.
 
 ## Features
 
