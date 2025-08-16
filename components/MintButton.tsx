@@ -8,6 +8,7 @@ import { baseSepolia } from 'wagmi/chains';
 interface MintButtonProps {
   fileHash: string;
   fileName: string;
+  ipfsCid?: string;
 }
 
 // Placeholder contract address - you'll need to deploy your actual contract

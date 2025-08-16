@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { uploadToIPFS } from '@/lib/ipfs';
 
 interface FileUploadProps {
-  onFileUpload: (file: File, hash: string) => void;
+  onFileUpload: (file: File, hash: string, ipfsCid?: string) => void;
 }
 
 export default function FileUpload({ onFileUpload }: FileUploadProps) {
@@ -25,8 +26,22 @@ export default function FileUpload({ onFileUpload }: FileUploadProps) {
     setUploading(true);
     
     try {
+      // Calculate hash
       const hash = await calculateFileHash(file);
-      onFileUpload(file, hash);
+      
+      // Upload to IPFS (optional - can be enabled via env var)
+      let ipfsCid: string | undefined;
+      if (process.env.NEXT_PUBLIC_ENABLE_IPFS === 'true') {
+        try {
+          const ipfsResult = await uploadToIPFS(file);
+          ipfsCid = ipfsResult.cid;
+          console.log('File uploaded to IPFS:', ipfsResult.gateway);
+        } catch (ipfsError) {
+          console.warn('IPFS upload failed, continuing without:', ipfsError);
+        }
+      }
+      
+      onFileUpload(file, hash, ipfsCid);
     } catch (error) {
       console.error('Error processing file:', error);
     } finally {

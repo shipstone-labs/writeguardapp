@@ -16,6 +16,7 @@ export default function Home() {
   const { isConnected } = useAccount();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileHash, setFileHash] = useState<string>('');
+  const [ipfsCid, setIpfsCid] = useState<string>('');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -78,9 +79,10 @@ export default function Home() {
           <div className="max-w-2xl mx-auto">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
               <FileUpload 
-                onFileUpload={(file, hash) => {
+                onFileUpload={(file, hash, cid) => {
                   setUploadedFile(file);
                   setFileHash(hash);
+                  if (cid) setIpfsCid(cid);
                 }}
               />
               
@@ -92,10 +94,15 @@ export default function Home() {
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                     File: {uploadedFile.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 font-mono break-all">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-mono break-all">
                     Hash: {fileHash}
                   </p>
-                  <MintButton fileHash={fileHash} fileName={uploadedFile.name} />
+                  {ipfsCid && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 font-mono break-all">
+                      IPFS: {ipfsCid}
+                    </p>
+                  )}
+                  <MintButton fileHash={fileHash} fileName={uploadedFile.name} ipfsCid={ipfsCid} />
                 </div>
               )}
             </div>
