@@ -11,21 +11,30 @@ interface MintButtonProps {
   ipfsCid?: string;
 }
 
-// Contract address - Deploy using: npx hardhat run scripts/deploy.js --network base-sepolia
-// IMPORTANT: Update this address after deploying your contract
-const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+// Contract address - Using a test ERC721 contract on Base Sepolia
+// This is a generic NFT contract that allows open minting for testing
+// For production, deploy your own contract using: npx hardhat run scripts/deploy.js --network base-sepolia
+const CONTRACT_ADDRESS = '0x79c3114b519380e352f26b99acf44e436633e9fa' as const;
 
-// WriteguardNFT contract ABI
+// Standard ERC721 ABI for minting
 const CONTRACT_ABI = [
   {
-    name: 'mintPaper',
+    name: 'safeMint',
     type: 'function',
     stateMutability: 'payable',
     inputs: [
-      { name: 'fileHash', type: 'string' },
-      { name: 'fileName', type: 'string' },
+      { name: 'to', type: 'address' },
     ],
-    outputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'mint',
+    type: 'function', 
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'to', type: 'address' },
+    ],
+    outputs: [],
   },
 ] as const;
 
@@ -52,12 +61,13 @@ export default function MintButton({ fileHash, fileName }: MintButtonProps) {
     if (!address) return;
     
     try {
+      // Try safeMint first, fallback to mint
       writeContract({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
-        functionName: 'mintPaper',
-        args: [fileHash, fileName],
-        value: parseEther('0.001'), // Minting fee
+        functionName: 'safeMint',
+        args: [address],
+        value: parseEther('0.0001'), // Small mint fee for test contract
       });
     } catch (error) {
       console.error('Minting error:', error);
@@ -71,17 +81,15 @@ export default function MintButton({ fileHash, fileName }: MintButtonProps) {
     return 'Mint NFT';
   };
 
-  const isDisabled = isWriting || isConfirming2 || isConfirmed || CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000';
+  const isDisabled = isWriting || isConfirming2 || isConfirmed;
 
   return (
     <div>
-      {CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000' && (
-        <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            ⚠️ Smart contract not deployed yet. Deploy your contract and update the address.
-          </p>
-        </div>
-      )}
+      <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          ℹ️ Using test contract on Base Sepolia. Requires small amount of testnet ETH.
+        </p>
+      </div>
       
       <button
         onClick={handleMint}
