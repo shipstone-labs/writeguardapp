@@ -37,23 +37,9 @@ jobs:
           NEXT_PUBLIC_CHAIN_NAME: Base
           NEXT_PUBLIC_RPC_URL: https://mainnet.base.org
 
-      - name: Deploy to Cloudflare Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: writeguardapp
-          directory: out
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy Preview to Cloudflare Pages
-        if: github.event_name == 'pull_request'
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: writeguardapp
-          directory: out
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref }}
+      # Note: Deployment is handled by Cloudflare Pages Git integration
+      # This action is kept for build verification only
+      # Preview deployments are automatic via Cloudflare's Git integration
+      - name: Build Verification Complete
+        if: success()
+        run: echo "Build successful. Cloudflare Pages will handle deployment via Git integration."
