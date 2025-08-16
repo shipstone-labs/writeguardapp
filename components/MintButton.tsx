@@ -11,10 +11,11 @@ interface MintButtonProps {
   ipfsCid?: string;
 }
 
-// Placeholder contract address - you'll need to deploy your actual contract
+// Contract address - Deploy using: npx hardhat run scripts/deploy.js --network base-sepolia
+// IMPORTANT: Update this address after deploying your contract
 const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
-// Placeholder ABI - replace with your actual contract ABI
+// WriteguardNFT contract ABI
 const CONTRACT_ABI = [
   {
     name: 'mintPaper',
