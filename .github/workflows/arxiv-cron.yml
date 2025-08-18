@@ -10,17 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Health Check
+      run: |
+        echo "🔍 Checking API health..."
+        curl -X POST "${{ secrets.HF_SPACES_URL }}/gradio_api/call/health" \
+          -H "Content-Type: application/json" \
+          -d '{"data": []}' \
+          --max-time 30 \
+          --retry 2
+    
     - name: Fetch arXiv Papers
       run: |
-        curl -X POST "${{ secrets.HF_SPACES_URL }}/api/arxiv/fetch" \
+        echo "📚 Fetching arXiv papers..."
+        curl -X POST "${{ secrets.HF_SPACES_URL }}/gradio_api/call/arxiv_fetch" \
           -H "Content-Type: application/json" \
-          -H "X-API-Key: ${{ secrets.API_KEY }}" \
-          -d '{}' \
+          -d '{"data": [${{ secrets.CRON_COUNT || 10 }}, "${{ secrets.API_KEY }}"]}' \
           --max-time 600 \
           --retry 3
         
         echo "✅ arXiv fetch completed"
-
-    - name: Health Check
-      run: |
-        curl -s "${{ secrets.HF_SPACES_URL }}/api/health" | jq '.'

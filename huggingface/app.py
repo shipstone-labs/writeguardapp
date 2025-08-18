@@ -1442,18 +1442,192 @@ with demo:
     gr.Button("Health", visible=False).click(check_health, outputs=hidden_output, api_name="health")
     gr.Button("Fetch", visible=False).click(trigger_fetch, inputs=[gr.Number(visible=False), gr.Textbox(visible=False)], outputs=hidden_output, api_name="arxiv_fetch")
 
-# Create combined interface with API docs as last tab
+# Create interactive API testing interface
 with demo:
-    with gr.Tab("📖 API Documentation"):
+    with gr.Tab("🧪 API Testing"):
         gr.Markdown("""
-        # 📚 Document Similarity API Documentation
+        # 🧪 Interactive API Testing
         
-        This space provides REST API endpoints for programmatic access to document similarity features.
+        Test all API endpoints directly from this interface. Perfect for NextJS client development!
+        """)
         
-        ## 🔐 Authentication
-        Most endpoints require an API key. Contact the administrator for production access.
+        # Global API Key input
+        with gr.Row():
+            global_api_key = gr.Textbox(
+                label="🔑 API Key", 
+                type="password", 
+                placeholder="Enter your API key for authenticated endpoints",
+                info="This will be used for all authenticated requests below"
+            )
         
-        ## 📋 Quick Reference
+        # Health Check Section
+        with gr.Group():
+            gr.Markdown("## 🏥 Health Check")
+            with gr.Row():
+                health_test_btn = gr.Button("GET /api/health", variant="primary")
+                health_test_output = gr.JSON(label="Response")
+        
+        # Document Management Section
+        with gr.Group():
+            gr.Markdown("## 📄 Document Management")
+            
+            # Add Document
+            with gr.Accordion("POST /api/add - Add Document", open=False):
+                with gr.Row():
+                    with gr.Column():
+                        add_content = gr.Textbox(label="Content", lines=4, placeholder="Enter document text...")
+                        add_metadata = gr.Textbox(label="Metadata (JSON)", placeholder='{"category": "example"}')
+                        add_btn = gr.Button("Add Document", variant="primary")
+                    with gr.Column():
+                        add_output = gr.JSON(label="Response")
+            
+            # Search Documents  
+            with gr.Accordion("POST /api/search - Search Documents", open=False):
+                with gr.Row():
+                    with gr.Column():
+                        search_query = gr.Textbox(label="Query", placeholder="Search for similar documents...")
+                        search_n_results = gr.Number(label="Number of Results", value=5, minimum=1, maximum=20)
+                        search_btn = gr.Button("Search Documents", variant="primary")
+                    with gr.Column():
+                        search_test_output = gr.JSON(label="Response")
+            
+            # Compare Documents
+            with gr.Accordion("POST /api/compare - Compare Documents", open=False):
+                with gr.Row():
+                    with gr.Column():
+                        compare_doc1 = gr.Textbox(label="Document 1", lines=3, placeholder="First document text...")
+                        compare_doc2 = gr.Textbox(label="Document 2", lines=3, placeholder="Second document text...")
+                        compare_btn = gr.Button("Compare Documents", variant="primary")
+                    with gr.Column():
+                        compare_test_output = gr.JSON(label="Response")
+            
+            # List Documents
+            with gr.Accordion("GET /api/documents - List All Documents", open=False):
+                with gr.Row():
+                    list_btn = gr.Button("List All Documents", variant="primary")
+                    list_test_output = gr.JSON(label="Response")
+            
+            # Delete Document
+            with gr.Accordion("DELETE /api/delete - Delete Document", open=False):
+                with gr.Row():
+                    with gr.Column():
+                        delete_doc_id = gr.Textbox(label="Document ID", placeholder="Enter document ID to delete")
+                        delete_btn = gr.Button("Delete Document", variant="stop")
+                    with gr.Column():
+                        delete_test_output = gr.JSON(label="Response")
+        
+        # PDF Upload Section
+        with gr.Group():
+            gr.Markdown("## 📄 PDF Processing")
+            with gr.Accordion("POST /api/add_pdf - Upload PDF", open=False):
+                with gr.Row():
+                    with gr.Column():
+                        pdf_file = gr.File(label="PDF File", file_types=[".pdf"])
+                        pdf_metadata = gr.Textbox(label="Metadata (JSON)", placeholder='{"category": "document"}')
+                        pdf_btn = gr.Button("Upload PDF", variant="primary")
+                    with gr.Column():
+                        pdf_test_output = gr.JSON(label="Response")
+        
+        # arXiv Section
+        with gr.Group():
+            gr.Markdown("## 📚 arXiv Integration")
+            with gr.Accordion("POST /api/arxiv_fetch - Fetch Papers", open=False):
+                with gr.Row():
+                    with gr.Column():
+                        arxiv_papers = gr.Number(label="Papers to Fetch", value=1, minimum=1, maximum=50)
+                        arxiv_btn = gr.Button("Fetch arXiv Papers", variant="secondary")
+                    with gr.Column():
+                        arxiv_test_output = gr.JSON(label="Response")
+        
+        # API Testing Functions
+        def test_health():
+            return check_health()
+        
+        def test_add_document(content, metadata_str, api_key):
+            try:
+                metadata = {} if not metadata_str.strip() else eval(metadata_str)
+            except:
+                metadata = {"note": metadata_str}
+            return api_add_document(content, metadata, api_key)
+        
+        def test_search_documents(query, n_results, api_key):
+            return api_search_documents(query, int(n_results), api_key)
+        
+        def test_compare_documents(doc1, doc2, api_key):
+            return api_compare_documents(doc1, doc2, api_key)
+        
+        def test_list_documents(api_key):
+            return api_list_documents(api_key)
+        
+        def test_delete_document(doc_id, api_key):
+            return api_delete_document(doc_id, api_key)
+        
+        def test_add_pdf(pdf_file, metadata_str, api_key):
+            try:
+                metadata = {} if not metadata_str.strip() else eval(metadata_str)
+            except:
+                metadata = {"note": metadata_str}
+            return api_add_pdf_document(pdf_file, metadata, api_key)
+        
+        def test_arxiv_fetch(max_papers, api_key):
+            return trigger_fetch(max_papers, api_key)
+        
+        # Connect all the testing buttons
+        health_test_btn.click(test_health, outputs=health_test_output)
+        
+        add_btn.click(
+            test_add_document,
+            inputs=[add_content, add_metadata, global_api_key],
+            outputs=add_output
+        )
+        
+        search_btn.click(
+            test_search_documents,
+            inputs=[search_query, search_n_results, global_api_key],
+            outputs=search_test_output
+        )
+        
+        compare_btn.click(
+            test_compare_documents,
+            inputs=[compare_doc1, compare_doc2, global_api_key],
+            outputs=compare_test_output
+        )
+        
+        list_btn.click(
+            test_list_documents,
+            inputs=[global_api_key],
+            outputs=list_test_output
+        )
+        
+        delete_btn.click(
+            test_delete_document,
+            inputs=[delete_doc_id, global_api_key],
+            outputs=delete_test_output
+        )
+        
+        pdf_btn.click(
+            test_add_pdf,
+            inputs=[pdf_file, pdf_metadata, global_api_key],
+            outputs=pdf_test_output
+        )
+        
+        arxiv_btn.click(
+            test_arxiv_fetch,
+            inputs=[arxiv_papers, global_api_key],
+            outputs=arxiv_test_output
+        )
+
+    # Add quick reference documentation tab
+    with gr.Tab("📖 API Reference"):
+        gr.Markdown("""
+        # 📚 API Reference
+        
+        ## 🔗 Base URL
+        ```
+        https://your-space.hf.space
+        ```
+        
+        ## 📋 Endpoints
         
         | Endpoint | Method | Auth | Description |
         |----------|--------|------|-------------|
@@ -1466,34 +1640,55 @@ with demo:
         | `/api/delete` | DELETE | Required | Delete document |
         | `/api/arxiv_fetch` | POST | Optional | Fetch arXiv papers |
         
-        ## 📝 Example Usage
+        ## 📝 NextJS Integration Examples
         
-        ```python
-        import requests
+        ```typescript
+        // api/health.ts
+        const response = await fetch('/api/health');
+        const data = await response.json();
         
-        # Health check (no auth)
-        response = requests.get("https://your-space.hf.space/api/health")
+        // api/documents.ts
+        const response = await fetch('/api/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: "Document text",
+            metadata: { category: "example" },
+            api_key: process.env.API_KEY
+          })
+        });
         
-        # Add document (requires API key)
-        response = requests.post("https://your-space.hf.space/api/add", json={
-            "content": "Your document text here",
-            "metadata": {"category": "example"},
-            "api_key": "your-api-key"
-        })
-        
-        # Search documents
-        response = requests.post("https://your-space.hf.space/api/search", json={
-            "query": "search term",
-            "n_results": 5,
-            "api_key": "your-api-key"
-        })
+        // api/search.ts
+        const response = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: "search term",
+            n_results: 5,
+            api_key: process.env.API_KEY
+          })
+        });
         ```
         
-        ## 🔗 Interactive API Testing
-        Add `?view=api` to this URL for interactive testing interface.
+        ## 🔑 Authentication
+        - Include `api_key` in request body for authenticated endpoints
+        - Store API key in environment variables for production
+        - Public endpoints (health check) don't require authentication
         
-        ---
-        *For detailed documentation with request/response examples, contact the administrator.*
+        ## 💾 Storage Separation
+        - **Demo Storage**: Public playground data (this interface)
+        - **API Storage**: Production data (authenticated requests)
+        - Data is kept separate between demo and production
+        
+        ## 🛠️ Response Format
+        All endpoints return JSON with consistent structure:
+        ```json
+        {
+          "message": "Success message",
+          "data": { /* response data */ },
+          "error": "Error message if applicable"
+        }
+        ```
         """)
 
 if __name__ == "__main__":
