@@ -46,7 +46,7 @@ interface UpdateRequest {
     spaceId: string;
     name: string; // Name for the edit
     editOps: Op[];
-    network?: string; // Default: 'sepolia'
+    network?: "TESTNET" | "MAINNET"; // Default: 'TESTNET'
   };
 
   // Custom user operation (if you want to override)
@@ -229,12 +229,15 @@ async function uploadAndRegister(
 }
 
 // Execute hypergraph update using Graph Protocol
-async function executeHypergraphUpdate(
-  hypergraphUpdate: any
-): Promise<{ userOpHash: string; cid: string }> {
+async function executeHypergraphUpdate(hypergraphUpdate: {
+  spaceId: string;
+  name: string;
+  editOps: Op[];
+  network?: "TESTNET" | "MAINNET";
+}): Promise<{ userOpHash: string; cid: string }> {
   console.log("🌐 Processing hypergraph update via Graph Protocol...");
 
-  const { spaceId, name, editOps, network = "sepolia" } = hypergraphUpdate;
+  const { spaceId, name, editOps, network = "TESTNET" } = hypergraphUpdate;
 
   // 1. Publish edit operations to IPFS using @graphprotocol/grc-20
   console.log("📁 Publishing edit to IPFS via Graph Protocol...");
@@ -285,7 +288,12 @@ async function executeCustomUserOp(
 }
 
 // Helper to encode call data for simple transactions
-function encodeCallData(transaction: any): string {
+function encodeCallData(transaction: {
+  to?: string;
+  data?: string;
+  value?: string;
+  gasLimit?: string;
+}): string {
   if (transaction.data) {
     return transaction.data;
   }
