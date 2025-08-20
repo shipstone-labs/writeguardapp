@@ -1,9 +1,7 @@
-import { NextRequest } from "next";
+import type { NextRequest } from "next/server";
 import {
   HYPERGRAPH_SCHEMA,
   generateSchemaSetupOperations,
-  validateEntityData,
-  validateRelationData,
 } from "../../../lib/hypergraph-schema";
 
 export async function GET() {
@@ -46,7 +44,9 @@ export async function POST(request: NextRequest) {
       process.env.HYPERGRAPH_SPACE_ID || HYPERGRAPH_SCHEMA.spaceId;
 
     const origin = request.headers.get("origin") || request.headers.get("host");
-    const baseUrl = origin ? `${origin.includes("://") ? "" : "https://"}${origin}` : "";
+    const baseUrl = origin
+      ? `${origin.includes("://") ? "" : "https://"}${origin}`
+      : "";
 
     const response = await fetch(`${baseUrl}/api/hypergraph-ops`, {
       method: "POST",

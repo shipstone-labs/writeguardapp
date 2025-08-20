@@ -116,7 +116,11 @@ export async function getWallet(): Promise<{
     console.log(`🌐 Network: ${chain.name} (Chain ID: ${chain.id})`);
     console.log("🔗 Fund URL:", fundUrl);
 
-    return { account, client: walletClient, publicClient };
+    return { 
+      account, 
+      client: walletClient as WalletClient, 
+      publicClient: publicClient as PublicClient 
+    };
   } catch (error) {
     console.error("❌ Wallet initialization failed:", error);
     throw error;

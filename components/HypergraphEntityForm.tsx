@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
+import type { Op } from '@graphprotocol/grc-20';
 import { DOCUMENT_ENTITY_TYPE, validateEntityData } from '../lib/hypergraph-schema';
 import { createDocumentEntity } from '../lib/schema-ids';
-import type { Op } from '@graphprotocol/grc-20';
 
-interface EntityFormData {
+interface EntityFormData extends Record<string, unknown> {
   entityId: string;
   title: string;
   authors: string[];
@@ -107,7 +108,7 @@ export function HypergraphEntityForm({ onSubmit, loading = false }: HypergraphEn
           <h3 className="text-red-800 font-medium mb-2">Validation Errors:</h3>
           <ul className="text-red-700 space-y-1">
             {errors.map((error, index) => (
-              <li key={index} className="text-sm">• {error}</li>
+              <li key={`error-${index}-${error.slice(0, 10)}`} className="text-sm">• {error}</li>
             ))}
           </ul>
         </div>
@@ -149,14 +150,14 @@ export function HypergraphEntityForm({ onSubmit, loading = false }: HypergraphEn
 
         {/* Authors */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="authors-section" className="block text-sm font-medium text-gray-700 mb-2">
             Authors *
           </label>
           
           {/* Existing authors */}
-          <div className="space-y-2 mb-3">
+          <div id="authors-section" className="space-y-2 mb-3">
             {formData.authors.map((author, index) => (
-              <div key={index} className="flex gap-2">
+              <div key={`author-${index}-${author.slice(0, 10)}`} className="flex gap-2">
                 <input
                   type="text"
                   value={author}
@@ -183,7 +184,12 @@ export function HypergraphEntityForm({ onSubmit, loading = false }: HypergraphEn
               onChange={(e) => setAuthorInput(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Add another author"
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAuthor())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addAuthor();
+                }
+              }}
             />
             <button
               type="button"

@@ -1,4 +1,4 @@
-import { NextRequest } from "next";
+import type { NextRequest } from "next/server";
 import {
   validateEntityData,
   validateRelationData,

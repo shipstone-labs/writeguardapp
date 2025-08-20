@@ -1,13 +1,13 @@
-import { NextApiRequest } from "next";
+import type { NextRequest } from "next/server";
+import { encodeFunctionData } from "viem";
 import {
   getWallet,
   sendUserOperation,
-  UserOperation,
+  type UserOperation,
   publishEditToIPFS,
   getSpaceEditCalldata,
-  Op,
+  type Op,
 } from "../../../lib/wallet";
-import { encodeFunctionData, parseEther } from "viem";
 
 // Example contract ABI for registering IPFS hashes
 const REGISTRY_ABI = [
@@ -56,9 +56,9 @@ interface UpdateRequest {
   operation: "transaction" | "ipfs_register" | "hypergraph_update" | "custom";
 }
 
-export async function POST(request: NextApiRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.body();
+    const body = await request.json();
     const {
       operation,
       transaction,
@@ -68,7 +68,7 @@ export async function POST(request: NextApiRequest) {
     }: UpdateRequest = body;
 
     // Get wallet instance
-    const { account, client } = await getWallet();
+    const { account } = await getWallet();
 
     console.log("🔄 Processing update request:", {
       operation,
@@ -304,21 +304,4 @@ function encodeCallData(transaction: {
   }
 
   throw new Error("Unable to encode call data");
-}
-
-// Health check endpoint
-export async function getWalletInfo() {
-  try {
-    const { account, publicClient } = await getWallet();
-    const balance = await publicClient.getBalance({ address: account.address });
-
-    return {
-      address: account.address,
-      balance: balance.toString(),
-      balanceETH: Number(balance) / 1e18,
-      network: "sepolia",
-    };
-  } catch (error) {
-    throw new Error(`Wallet info failed: ${(error as Error).message}`);
-  }
 }

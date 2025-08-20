@@ -1,4 +1,4 @@
-import { getWalletStatus } from "../hypergraph-ops/route";
+import { getWalletStatus } from "../../../lib/wallet-utils";
 
 export async function GET() {
   console.log("🔍 Wallet status API called");
