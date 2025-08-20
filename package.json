@@ -41,7 +41,8 @@
 		"grc-20": "link:@types/@graphprotocol/grc-20",
 		"hardhat": "^2.26.0",
 		"tailwindcss": "^4",
-		"typescript": "^5"
+		"typescript": "^5",
+		"wrangler": "^4.31.0"
 	},
 	"pnpm": {
 		"overrides": {
