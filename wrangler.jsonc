@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "writeguard-worker",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "fd3e8df0c0444223ac5b1b12a2556f2f",
+      "preview_id": "c629215bfc2a484486cbc8a327c3fa97"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "writeguard-db",
+      "database_id": "e2b8deeb-d887-4765-a638-7b57c05e96e6"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      "bucket_name": "writeguard-files"
+    },
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "writeguard-next-cache"
+    }
+  ],
+  // wrangler.toml (wrangler v3.88.0^)
+  "observability": {
+    "logs": {
+      "enabled": true
+    }
+  }
+}
