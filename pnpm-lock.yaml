@@ -78,6 +78,9 @@ importers:
       eslint-config-next:
         specifier: 15.4.6
         version: 15.4.6(eslint@9.33.0(jiti@2.5.1))(typescript@5.9.2)
+      grc-20:
+        specifier: link:@types/@graphprotocol/grc-20
+        version: link:@types/@graphprotocol/grc-20
       hardhat:
         specifier: ^2.26.0
         version: 2.26.3(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@20.19.11)(typescript@5.9.2))(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -9708,7 +9711,7 @@ snapshots:
     dependencies:
       cipher-base: 1.0.6
       inherits: 2.0.4
-      ripemd160: 2.0.1
+      ripemd160: 2.0.2
       sha.js: 2.4.12
 
   create-hash@1.2.0:
