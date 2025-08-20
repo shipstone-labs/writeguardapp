@@ -7,6 +7,7 @@ interface HypergraphRequest {
   name?: string; // Name for the edit batch
 }
 
+
 export async function POST(request: NextRequest) {
   console.log("🌐 Hypergraph operations API called");
   console.log("📥 Method: POST");
@@ -102,4 +103,3 @@ export async function POST(request: NextRequest) {
     return Response.json(errorResponse, { status: 500 });
   }
 }
-

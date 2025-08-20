@@ -4,6 +4,7 @@ import {
   generateSchemaSetupOperations,
 } from "../../../lib/hypergraph-schema";
 
+
 export async function GET() {
   console.log("📋 Schema setup API called");
   console.log("📥 Method: GET");

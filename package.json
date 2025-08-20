@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "pages:build": "next build",
-    "pages:deploy": "npm run pages:build && wrangler pages deploy out"
+    "deploy": "pnpm run build && pnpm upload",
+    "upload": "open-next deploy --dist .open-next/dist --config open-next.config.ts"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.19",
@@ -28,6 +28,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@opennextjs/cloudflare": "^1.6.5",
     "@openzeppelin/contracts": "^5.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

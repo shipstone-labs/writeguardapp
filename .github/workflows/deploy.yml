@@ -1,70 +1,89 @@
-name: Deploy to Cloudflare Pages
+name: Build and Deploy to Cloudflare Workers
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
-      - main
+      - 'main'
+  push:
+    branches:
+      - 'main'
 
-concurrency:
-  group: compile-${{ github.ref }}
-  cancel-in-progress: true
+env:
+  CF_PROJECT_NAME: writeguard-worker
+  CF_BASE_URL: writeguard-worker
+  CF_DOMAIN: writeguard-worker
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - run: |
-          curl https://mise.run | sh
-          mise install
-          mise x -- corepack enable
-
-      - name: Install dependencies
-        run: mise x -- pnpm i
-
-      - name: Build
-        run: mise x -- pnpm build
-        env:
-          NEXT_PUBLIC_ONCHAINKIT_API_KEY: ${{ secrets.NEXT_PUBLIC_ONCHAINKIT_API_KEY }}
-          NEXT_PUBLIC_WC_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WC_PROJECT_ID }}
-          NEXT_PUBLIC_CHAIN_ID: 8453
-          NEXT_PUBLIC_CHAIN_NAME: Base
-          NEXT_PUBLIC_RPC_URL: https://mainnet.base.org
-
-      - name: 🚀 Deploy release
-        if: ${{ steps.extract_branch.outputs.branch == '' }}
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_PROJECT_NAME: "writeguardapp"
+      - name: Extract branch name
+        shell: bash
         run: |
-          mise x -- pnpm dlx wrangler pages deploy --project-name "${CF_PROJECT_NAME}" out --branch "main"
+          PR_NUMBER="${{ github.event.number }}"
+          if [ -n "$PR_NUMBER" ]
+          then
+            echo "branch_name=pr-${PR_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            echo "branch_name=" >> $GITHUB_OUTPUT
+          fi
 
-      - name: 🚀 Deploy ${{ steps.extract_branch.outputs.branch }} (PR)
-        if: ${{ steps.extract_branch.outputs.branch != '' }}
+        id: extract_branch
+
+      - uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: "10.13.1"
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '24.4.0'
+          cache: 'pnpm'
+
+      - name: ⚙️ Install dependencies
+        run: pnpm install
+
+      - name: 'Deploy release'
+        if: ${{ steps.extract_branch.outputs.branch_name == '' }}
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_PROJECT_NAME: "writeguardapp"
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          NEXT_PUBLIC_RPC_URL: ${{ secrets.NEXT_PUBLIC_RPC_URL }}
+          WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
+          WALLET_ENCRYPTION_KEY: ${{ secrets.WALLET_ENCRYPTION_KEY }}
+          HYPERGRAPH_SPACE_ID: ${{ secrets.HYPERGRAPH_SPACE_ID }}
         run: |
-          mise x -- pnpm dlx wrangler pages deploy --project-name "${CF_PROJECT_NAME}" out --branch "${{ steps.extract_branch.outputs.branch }}" | tee output.log
-          sed < output.log -n 's#.*Take a peek over at \(.*\)$#specific_url=\1#p' >> $GITHUB_OUTPUT
+          pnpm run deploy
+
+      - name: Deploy ${{ steps.extract_branch.outputs.branch_name }} (PR)
+        if: ${{ steps.extract_branch.outputs.branch_name != '' }}
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          NEXT_PUBLIC_RPC_URL: ${{ secrets.NEXT_PUBLIC_RPC_URL }}
+          WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
+          WALLET_ENCRYPTION_KEY: ${{ secrets.WALLET_ENCRYPTION_KEY }}
+          HYPERGRAPH_SPACE_ID: ${{ secrets.HYPERGRAPH_SPACE_ID }}
+        run: |
+          # looks like cloudflare implemented a new --preview-alias
+          # pnpm wrangler dispatch-namespace create "${{ steps.extract_branch.outputs.branch_name }}" || echo "Probably Already Created"
+          pnpm upload --preview-alias "${{ steps.extract_branch.outputs.branch_name }}" | tee .output.log
+          sed -n -e 's#Version Preview \(Alias\)\? \?URL: \(https://.*$\)#export \1URL="\2"#gp' .output.log
+          eval $(sed -n -e 's#Version Preview \(Alias\)\? \?URL: \(https://.*$\)#export \1URL="\2"#gp' .output.log)
+          echo $AliasURL
+          echo $URL
+          echo "version_url=$URL" >> $GITHUB_OUTPUT
+          echo "url=$AliasURL" >> $GITHUB_OUTPUT
         id: deploy
 
       - name: Create commit comment
         uses: mshick/add-pr-comment@v2
-        if: ${{ github.event.number != '' }}
+        if: ${{ steps.extract_branch.outputs.branch_name != '' }}
         with:
           message: |
-            ### Deployed with **Cloudflare Pages** :cloud: :rocket: :ok:
-            - **URL**: [${{ steps.extract_branch.outputs.url }}](${{ steps.extract_branch.outputs.url }})
-            - **Specific**: [${{ steps.deploy.outputs.specific_url }}](${{ steps.deploy.outputs.specific_url }})
+            ### Deployed with **Cloudflare Worker** :cloud: :rocket: :ok:
+            - **URL**: [${{ steps.deploy.outputs.url }}](${{ steps.deploy.outputs.url }})
+            - **Version URL**: [${{ steps.deploy.outputs.version_url }}](${{ steps.deploy.outputs.version_url }})

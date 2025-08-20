@@ -56,6 +56,7 @@ interface UpdateRequest {
   operation: "transaction" | "ipfs_register" | "hypergraph_update" | "custom";
 }
 
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
