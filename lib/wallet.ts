@@ -1,5 +1,5 @@
 import { privateKeyToAccount } from "viem/accounts";
-import { sepolia } from "viem/chains";
+import { base, baseSepolia } from "viem/chains";
 import {
   type Account,
   type PublicClient,
@@ -17,9 +17,15 @@ import { getKVStorage } from "./kv-storage";
 // Environment variables
 const ENCRYPTION_KEY =
   process.env.WALLET_ENCRYPTION_KEY || "demo-key-32-bytes-for-testing-only"; // 32-byte key
-const SEPOLIA_RPC_URL =
-  process.env.SEPOLIA_RPC_URL || "https://rpc.sepolia.org";
 const PRIVATE_KEY_STORAGE_KEY = "ethereum_wallet_key";
+
+// Network configuration - single network for consistent NFT minting
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const chain = IS_PRODUCTION ? base : baseSepolia;
+const rpcUrl = IS_PRODUCTION 
+  ? (process.env.NEXT_PUBLIC_RPC_URL || "https://mainnet.base.org")
+  : (process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.base.org");
+const fundUrl = "https://bridge.base.org";
 
 // Encryption/Decryption helpers
 function encryptPrivateKey(privateKey: string, password: string): string {
@@ -84,7 +90,7 @@ export async function getWallet(): Promise<{
           console.log("✨ NEW WALLET CREATED:");
           console.log("🔑 Public Address will be logged below");
           console.log("🔐 Private key stored securely in KV storage");
-          console.log("💡 For production, fund this address with Sepolia ETH");
+          console.log(`💡 For production, fund this address with ${chain.name} ETH`);
         }
       }
     }
@@ -95,20 +101,20 @@ export async function getWallet(): Promise<{
     // Create wallet client for transactions
     const walletClient = createWalletClient({
       account,
-      chain: sepolia,
-      transport: http(SEPOLIA_RPC_URL),
+      chain,
+      transport: http(rpcUrl),
     });
 
     // Create public client for reading blockchain state
     const publicClient = createPublicClient({
-      chain: sepolia,
-      transport: http(SEPOLIA_RPC_URL),
+      chain,
+      transport: http(rpcUrl),
     });
 
     console.log("✅ Wallet loaded successfully");
     console.log("📍 PUBLIC ADDRESS:", account.address);
-    console.log("🌐 Network: Sepolia Testnet");
-    console.log("🔗 Fund URL: https://faucet.sepolia.dev");
+    console.log(`🌐 Network: ${chain.name} (Chain ID: ${chain.id})`);
+    console.log("🔗 Fund URL:", fundUrl);
 
     return { account, client: walletClient, publicClient };
   } catch (error) {
