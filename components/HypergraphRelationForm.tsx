@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import {
   SIMILARITY_RELATION_TYPE,
   validateRelationData,
@@ -105,7 +106,7 @@ export function HypergraphRelationForm({
           <h3 className="text-red-800 font-medium mb-2">Validation Errors:</h3>
           <ul className="text-red-700 space-y-1">
             {errors.map((error, index) => (
-              <li key={index} className="text-sm">
+              <li key={error || index} className="text-sm">
                 • {error}
               </li>
             ))}
